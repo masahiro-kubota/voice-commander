@@ -95,11 +95,7 @@ function ApiKeyInput() {
         setSaved(true);
         setTimeout(() => {
           try {
-            try {
-        window.close();
-      } catch (e) {
-        console.error('ウィンドウを閉じる際にエラーが発生しました:', e);
-      }
+            window.close();
           } catch (e) {
             console.error('ウィンドウを閉じる際にエラーが発生しました:', e);
           }
@@ -116,7 +112,7 @@ function ApiKeyInput() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
@@ -150,7 +146,7 @@ function ApiKeyInput() {
           type={showApiKey ? 'text' : 'password'}
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="OpenAI API Key (sk-...)"
           disabled={loading || saved}
           autoComplete="off"

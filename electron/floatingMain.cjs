@@ -7,6 +7,7 @@ let mainWindow = null;
 let floatingWindow = null;
 let toastWindow = null;
 let apiKeyWindow = null;
+let apiKeyBlurTimeout = null; // グローバルスコープに移動
 let tray = null;
 let openAIService = null;
 let hotkeyManager = null;
@@ -232,6 +233,12 @@ function createToastWindow(text) {
 
 // APIキー入力ウィンドウを作成
 function createApiKeyWindow() {
+  // 既存のタイマーをクリア
+  if (apiKeyBlurTimeout) {
+    clearTimeout(apiKeyBlurTimeout);
+    apiKeyBlurTimeout = null;
+  }
+  
   if (apiKeyWindow) {
     apiKeyWindow.focus();
     return;
@@ -288,13 +295,17 @@ function createApiKeyWindow() {
 
   apiKeyWindow.on('closed', () => {
     apiKeyWindow = null;
+    // ウィンドウが閉じられた時にタイマーもクリア
+    if (apiKeyBlurTimeout) {
+      clearTimeout(apiKeyBlurTimeout);
+      apiKeyBlurTimeout = null;
+    }
   });
 
   // フォーカスが外れたら遅延して閉じる
-  let blurTimeout = null;
   apiKeyWindow.on('blur', () => {
     // 遅延を設けることで、ウィンドウ内の要素間のフォーカス移動で閉じないようにする
-    blurTimeout = setTimeout(() => {
+    apiKeyBlurTimeout = setTimeout(() => {
       if (apiKeyWindow && !apiKeyWindow.isDestroyed()) {
         apiKeyWindow.close();
       }
@@ -303,9 +314,9 @@ function createApiKeyWindow() {
   
   apiKeyWindow.on('focus', () => {
     // フォーカスが戻った場合はタイマーをクリア
-    if (blurTimeout) {
-      clearTimeout(blurTimeout);
-      blurTimeout = null;
+    if (apiKeyBlurTimeout) {
+      clearTimeout(apiKeyBlurTimeout);
+      apiKeyBlurTimeout = null;
     }
   });
 }
