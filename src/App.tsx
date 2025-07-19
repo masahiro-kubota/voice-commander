@@ -178,6 +178,19 @@ function App() {
       window.electronAPI.removeHotkeyListener(removeCallback);
     };
   }, [handleHotkeyToggle]);
+  
+  // 設定ダイアログを開くイベントを受信
+  useEffect(() => {
+    const handleOpenSettings = () => {
+      setSettingsOpen(true);
+    };
+    
+    window.electronAPI.onMessage('open-settings', handleOpenSettings);
+    
+    return () => {
+      // クリーンアップ処理（必要に応じて）
+    };
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>

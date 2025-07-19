@@ -49,16 +49,25 @@ const StyledIconButton = styled(IconButton)<{ isRecording: boolean }>(({ isRecor
 interface FloatingButtonProps {
   isRecording: boolean;
   onToggle: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-const FloatingButton: React.FC<FloatingButtonProps> = ({ isRecording, onToggle }) => {
+const FloatingButton: React.FC<FloatingButtonProps> = ({ isRecording, onToggle, onContextMenu }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // 親のドラッグイベントを停止
     onToggle();
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onContextMenu) {
+      onContextMenu(e);
+    }
+  };
+
   return (
-    <FloatingButtonContainer>
+    <FloatingButtonContainer onContextMenu={handleContextMenu}>
       <StyledIconButton isRecording={isRecording} onClick={handleClick}>
         <MicIcon sx={{ fontSize: 30 }} />
       </StyledIconButton>

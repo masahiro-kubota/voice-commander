@@ -6,16 +6,18 @@ const HotkeyManager = require('./hotkeyManager.cjs');
 let mainWindow = null;
 let floatingWindow = null;
 let toastWindow = null;
+let apiKeyWindow = null;
+let apiKeyBlurTimeout = null; // グローバルスコープに移動
 let tray = null;
 let openAIService = null;
 let hotkeyManager = null;
-let recordingHistory = [];
 
 // ウィンドウサイズ定数
 const WINDOW_SIZES = {
   FLOATING: { width: 80, height: 80 },
   TOAST: { width: 400, height: 120 },
-  MAIN: { width: 1000, height: 700 }
+  MAIN: { width: 1000, height: 700 },
+  APIKEY: { width: 350, height: 80 }
 };
 
 // 間隔・位置定数
@@ -87,6 +89,17 @@ function createFloatingWindow() {
 
 // トースト通知ウィンドウを作成
 function createToastWindow(text) {
+  // テキストの長さに基づいて高さを計算
+  const CHARS_PER_LINE = 40;
+  const LINE_HEIGHT = 22;
+  const MIN_CONTENT_HEIGHT = 60;
+  const MAX_CONTENT_HEIGHT = 200; // 最大高さを制限
+  const HEADER_PADDING = 80;
+  
+  const lines = Math.ceil(text.length / CHARS_PER_LINE);
+  const contentHeight = Math.min(MAX_CONTENT_HEIGHT, Math.max(MIN_CONTENT_HEIGHT, lines * LINE_HEIGHT));
+  const windowHeight = contentHeight + HEADER_PADDING;
+  
   // フローティングウィンドウの現在位置を取得
   let toastX, toastY;
   let display;
@@ -122,7 +135,7 @@ function createToastWindow(text) {
     toastX = Math.max(display.bounds.x + SPACING.TOAST_OFFSET, 
                      Math.min(toastX, display.bounds.x + display.bounds.width - WINDOW_SIZES.TOAST.width - SPACING.TOAST_OFFSET));
     toastY = Math.max(display.bounds.y + SPACING.TOAST_OFFSET, 
-                     Math.min(toastY, display.bounds.y + display.bounds.height - WINDOW_SIZES.TOAST.height - SPACING.TOAST_OFFSET));
+                     Math.min(toastY, display.bounds.y + display.bounds.height - windowHeight - SPACING.TOAST_OFFSET));
     
   } else {
     // フローティングウィンドウがない場合はプライマリディスプレイの従来位置
@@ -133,7 +146,7 @@ function createToastWindow(text) {
 
   toastWindow = new BrowserWindow({
     width: WINDOW_SIZES.TOAST.width,
-    height: WINDOW_SIZES.TOAST.height,
+    height: windowHeight,
     x: toastX,
     y: toastY,
     frame: false,
@@ -167,6 +180,8 @@ function createToastWindow(text) {
             padding: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             animation: fadeIn 0.3s ease-out;
+            min-width: 200px;
+            max-width: 380px;
           }
           .success-header {
             display: flex;
@@ -180,9 +195,9 @@ function createToastWindow(text) {
             color: white;
             font-size: 14px;
             word-break: break-word;
-            max-height: 60px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
           }
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -213,6 +228,96 @@ function createToastWindow(text) {
 
   toastWindow.on('closed', () => {
     toastWindow = null;
+  });
+}
+
+// APIキー入力ウィンドウを作成
+function createApiKeyWindow() {
+  // 既存のタイマーをクリア
+  if (apiKeyBlurTimeout) {
+    clearTimeout(apiKeyBlurTimeout);
+    apiKeyBlurTimeout = null;
+  }
+  
+  if (apiKeyWindow) {
+    apiKeyWindow.focus();
+    return;
+  }
+
+  // フローティングウィンドウの位置を取得
+  const [floatingX, floatingY] = floatingWindow.getPosition();
+  const floatingBounds = floatingWindow.getBounds();
+  
+  // 現在のディスプレイを取得
+  const display = screen.getDisplayNearestPoint({ x: floatingX, y: floatingY });
+  
+  // フローティングボタンの右側に表示
+  let x = floatingX + floatingBounds.width + SPACING.TOAST_OFFSET;
+  let y = floatingY + (floatingBounds.height - WINDOW_SIZES.APIKEY.height) / 2;
+  
+  // 右側に入らない場合は左側に表示
+  if (x + WINDOW_SIZES.APIKEY.width > display.bounds.x + display.bounds.width) {
+    x = floatingX - WINDOW_SIZES.APIKEY.width - SPACING.TOAST_OFFSET;
+  }
+  
+  // 上下の境界チェック
+  if (y < display.bounds.y) {
+    y = display.bounds.y + SPACING.TOAST_OFFSET;
+  } else if (y + WINDOW_SIZES.APIKEY.height > display.bounds.y + display.bounds.height) {
+    y = display.bounds.y + display.bounds.height - WINDOW_SIZES.APIKEY.height - SPACING.TOAST_OFFSET;
+  }
+
+  apiKeyWindow = new BrowserWindow({
+    width: WINDOW_SIZES.APIKEY.width,
+    height: WINDOW_SIZES.APIKEY.height,
+    x: x,
+    y: y,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    backgroundColor: '#00000000',
+    hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  // 開発環境の場合
+  if (process.env.NODE_ENV === 'development') {
+    apiKeyWindow.loadURL('http://localhost:5173/apikey.html');
+  } else {
+    apiKeyWindow.loadFile(path.join(__dirname, '../dist/apikey.html'));
+  }
+
+  apiKeyWindow.on('closed', () => {
+    apiKeyWindow = null;
+    // ウィンドウが閉じられた時にタイマーもクリア
+    if (apiKeyBlurTimeout) {
+      clearTimeout(apiKeyBlurTimeout);
+      apiKeyBlurTimeout = null;
+    }
+  });
+
+  // フォーカスが外れたら遅延して閉じる
+  apiKeyWindow.on('blur', () => {
+    // 遅延を設けることで、ウィンドウ内の要素間のフォーカス移動で閉じないようにする
+    apiKeyBlurTimeout = setTimeout(() => {
+      if (apiKeyWindow && !apiKeyWindow.isDestroyed()) {
+        apiKeyWindow.close();
+      }
+    }, 100);
+  });
+  
+  apiKeyWindow.on('focus', () => {
+    // フォーカスが戻った場合はタイマーをクリア
+    if (apiKeyBlurTimeout) {
+      clearTimeout(apiKeyBlurTimeout);
+      apiKeyBlurTimeout = null;
+    }
   });
 }
 
@@ -265,18 +370,7 @@ function updateTrayMenu() {
       },
     },
     {
-      label: '認識履歴',
-      submenu: recordingHistory.length > 0 
-        ? recordingHistory.slice(-10).reverse().map((item, index) => ({
-            label: `${index + 1}. ${item.text.substring(0, 30)}${item.text.length > 30 ? '...' : ''}`,
-            click: () => {
-              clipboard.writeText(item.text);
-            },
-          }))
-        : [{ label: '履歴なし', enabled: false }],
-    },
-    {
-      label: '設定',
+      label: 'API キー設定',
       click: () => {
         if (!mainWindow) {
           createMainWindow();
@@ -315,16 +409,6 @@ function setupIPCHandlers() {
   ipcMain.handle('transcribe-audio', async (_, audioBuffer, options) => {
     try {
       const result = await openAIService.transcribeAudio(audioBuffer, options);
-      
-      // 履歴に追加
-      if (result && result.text) {
-        recordingHistory.push({
-          text: result.text,
-          timestamp: new Date(),
-        });
-        updateTrayMenu();
-      }
-      
       return { success: true, data: result };
     } catch (error) {
       return { success: false, error: error.message };
@@ -353,7 +437,7 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.on('update-recording-state', (event, isRecording) => {
+  ipcMain.on('update-recording-state', (_, isRecording) => {
     // フローティングウィンドウのUIを更新
     if (floatingWindow) {
       floatingWindow.webContents.send('recording-state-changed', isRecording);
@@ -374,6 +458,11 @@ function setupIPCHandlers() {
       const currentPos = floatingWindow.getPosition();
       floatingWindow.setPosition(currentPos[0] + deltaX, currentPos[1] + deltaY);
     }
+  });
+  
+  // コンテキストメニューを表示
+  ipcMain.on('show-context-menu', () => {
+    createApiKeyWindow();
   });
 }
 

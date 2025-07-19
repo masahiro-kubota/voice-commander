@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         floating: resolve(__dirname, 'floating.html'),
+        apikey: resolve(__dirname, 'apikey.html'),
       },
     },
   },

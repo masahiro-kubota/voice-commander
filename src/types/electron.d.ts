@@ -1,9 +1,9 @@
 // Electron API の型定義
 interface ElectronAPI {
   // API キー管理
-  getApiKey: () => Promise<string>;
-  setApiKey: (apiKey: string) => Promise<boolean>;
-  testApiKey: (apiKey: string) => Promise<boolean>;
+  getApiKey: () => Promise<string>; // 保存されているAPIキーを取得
+  setApiKey: (apiKey: string) => Promise<boolean>; // APIキーを保存（成功時true）
+  testApiKey: (apiKey: string) => Promise<boolean>; // APIキーの有効性を検証（有効ならtrue）
   
   // 音声文字起こし
   transcribeAudio: (
@@ -43,6 +43,9 @@ interface ElectronAPI {
   
   // ウィンドウ移動
   moveWindow: (deltaX: number, deltaY: number) => void;
+  
+  // コンテキストメニューを表示
+  showContextMenu: () => void;
 }
 
 interface Window {
