@@ -2,7 +2,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // APIをレンダラープロセスに公開
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 必要に応じてIPCメソッドを追加
+  // OpenAI API関連
+  getApiKey: () => ipcRenderer.invoke('get-api-key'),
+  setApiKey: (apiKey) => ipcRenderer.invoke('set-api-key', apiKey),
+  testApiKey: (apiKey) => ipcRenderer.invoke('test-api-key', apiKey),
+  transcribeAudio: (audioBuffer, options) => ipcRenderer.invoke('transcribe-audio', audioBuffer, options),
+  
+  // 既存のメソッド
   sendMessage: (channel, data) => {
     const validChannels = ['toMain'];
     if (validChannels.includes(channel)) {
