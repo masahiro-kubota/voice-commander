@@ -20,6 +20,9 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 
+// APIキー検証用の定数
+const MIN_API_KEY_LENGTH = 20;
+
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
@@ -42,7 +45,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 
   const loadApiKey = async () => {
     try {
-      const key = await (window as any).electronAPI.getApiKey();
+      const key = await window.electronAPI.getApiKey();
       setApiKey(key || '');
     } catch (err) {
       console.error('APIキーの読み込みエラー:', err);
@@ -56,7 +59,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
     if (!key.startsWith('sk-')) {
       return 'APIキーは "sk-" で始まる必要があります';
     }
-    if (key.length < 20) {
+    if (key.length < MIN_API_KEY_LENGTH) {
       return 'APIキーが短すぎます';
     }
     return null;
@@ -77,7 +80,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 
     try {
       // APIキーの有効性をテスト
-      const isValid = await (window as any).electronAPI.testApiKey(apiKey);
+      const isValid = await window.electronAPI.testApiKey(apiKey);
       
       if (!isValid) {
         setError('APIキーが無効です。正しいキーを入力してください。');
@@ -87,7 +90,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
       }
 
       // APIキーを保存
-      const saved = await (window as any).electronAPI.setApiKey(apiKey);
+      const saved = await window.electronAPI.setApiKey(apiKey);
       
       if (saved) {
         setSuccess(true);

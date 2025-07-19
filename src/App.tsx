@@ -92,7 +92,7 @@ function App() {
       // Electron経由で文字起こし
       const arrayBuffer = await audioBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      const result = await (window as any).electronAPI.transcribeAudio(
+      const result = await window.electronAPI.transcribeAudio(
         uint8Array,
         { language: 'ja', responseFormat: 'verbose_json' }
       );
