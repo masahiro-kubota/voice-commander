@@ -110,6 +110,12 @@ function FloatingApp() {
     }
   }, [isRecording, startRecording, stopRecording]);
 
+  // 右クリックメニューのハンドラー
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    // メインプロセスに右クリックイベントを通知
+    window.electronAPI.showContextMenu();
+  }, []);
+
   // ドラッグ処理
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // ボタンのクリックエリア以外でドラッグを開始
@@ -174,7 +180,8 @@ function FloatingApp() {
       >
         <FloatingButton 
           isRecording={isRecording} 
-          onToggle={handleToggleRecording} 
+          onToggle={handleToggleRecording}
+          onContextMenu={handleContextMenu}
         />
       </div>
     </ThemeProvider>

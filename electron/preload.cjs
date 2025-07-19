@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   onMessage: (channel, func) => {
-    const validChannels = ['fromMain', 'toggle-recording-hotkey'];
+    const validChannels = ['fromMain', 'toggle-recording-hotkey', 'open-settings'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
@@ -59,4 +59,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // ウィンドウ移動用
   moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', deltaX, deltaY),
+  
+  // コンテキストメニューを表示
+  showContextMenu: () => ipcRenderer.send('show-context-menu'),
 });

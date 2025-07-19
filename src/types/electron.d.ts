@@ -43,6 +43,9 @@ interface ElectronAPI {
   
   // ウィンドウ移動
   moveWindow: (deltaX: number, deltaY: number) => void;
+  
+  // コンテキストメニューを表示
+  showContextMenu: () => void;
 }
 
 interface Window {
