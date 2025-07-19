@@ -16,6 +16,7 @@ dist-electron
 # Electron Builder output
 dist_electron/
 build/*
+squashfs-root/
 !build/icon.png
 *.AppImage
 *.snap
