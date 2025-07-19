@@ -22,8 +22,8 @@ interface ElectronAPI {
   }>;
   
   // 既存のメッセージング
-  sendMessage: (channel: string, data: any) => void;
-  onMessage: (channel: string, func: (...args: any[]) => void) => void;
+  sendMessage: (channel: string, data: unknown) => void;
+  onMessage: (channel: string, func: (...args: unknown[]) => void) => void;
   
   // ホットキー関連
   onHotkeyToggle: (callback: () => void) => () => void;

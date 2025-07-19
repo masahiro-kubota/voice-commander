@@ -3,7 +3,7 @@ import { Box, Typography, Fade } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-const ToastContainer = styled(Box)(({ theme }) => ({
+const ToastContainer = styled(Box)(() => ({
   position: 'fixed',
   bottom: 20,
   right: 20,
@@ -11,20 +11,20 @@ const ToastContainer = styled(Box)(({ theme }) => ({
   maxWidth: 400,
   backgroundColor: 'rgba(0, 0, 0, 0.9)',
   borderRadius: 8,
-  padding: theme.spacing(2),
+  padding: 16,
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
   zIndex: 9999,
 }));
 
-const SuccessHeader = styled(Box)(({ theme }) => ({
+const SuccessHeader = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1),
-  marginBottom: theme.spacing(1),
+  gap: 8,
+  marginBottom: 8,
   color: '#4caf50',
 }));
 
-const TranscriptText = styled(Typography)(({ theme }) => ({
+const TranscriptText = styled(Typography)(() => ({
   color: 'white',
   fontSize: '14px',
   wordBreak: 'break-word',

@@ -101,8 +101,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
       } else {
         setError('APIキーの保存に失敗しました');
       }
-    } catch (err: any) {
-      setError(err.message || 'エラーが発生しました');
+    } catch (err) {
+      setError((err as Error).message || 'エラーが発生しました');
     } finally {
       setLoading(false);
       setIsValidating(false);

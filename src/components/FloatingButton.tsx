@@ -15,7 +15,7 @@ const pulse = keyframes`
   }
 `;
 
-const FloatingButtonContainer = styled(Box)(({ theme }) => ({
+const FloatingButtonContainer = styled(Box)(() => ({
   position: 'relative',
   width: '60px',
   height: '60px',
@@ -33,7 +33,7 @@ const FloatingButtonContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const StyledIconButton = styled(IconButton)<{ isRecording: boolean }>(({ theme, isRecording }) => ({
+const StyledIconButton = styled(IconButton)<{ isRecording: boolean }>(({ isRecording }) => ({
   width: '100%',
   height: '100%',
   backgroundColor: isRecording ? '#f44336' : '#2196F3',

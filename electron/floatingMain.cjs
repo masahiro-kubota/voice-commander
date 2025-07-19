@@ -280,15 +280,15 @@ function setupIPCHandlers() {
     return openAIService.getApiKey();
   });
   
-  ipcMain.handle('set-api-key', async (event, apiKey) => {
+  ipcMain.handle('set-api-key', async (_, apiKey) => {
     return openAIService.setApiKey(apiKey);
   });
   
-  ipcMain.handle('test-api-key', async (event, apiKey) => {
+  ipcMain.handle('test-api-key', async (_, apiKey) => {
     return openAIService.testApiKey(apiKey);
   });
   
-  ipcMain.handle('transcribe-audio', async (event, audioBuffer, options) => {
+  ipcMain.handle('transcribe-audio', async (_, audioBuffer, options) => {
     try {
       const result = await openAIService.transcribeAudio(audioBuffer, options);
       
@@ -307,7 +307,7 @@ function setupIPCHandlers() {
     }
   });
   
-  ipcMain.handle('write-to-clipboard', async (event, text) => {
+  ipcMain.handle('write-to-clipboard', async (_, text) => {
     try {
       clipboard.writeText(text);
       // トースト通知を表示
@@ -345,7 +345,7 @@ function setupIPCHandlers() {
   });
 
   // ウィンドウ移動
-  ipcMain.on('move-window', (event, deltaX, deltaY) => {
+  ipcMain.on('move-window', (_, deltaX, deltaY) => {
     if (floatingWindow) {
       const currentPos = floatingWindow.getPosition();
       floatingWindow.setPosition(currentPos[0] + deltaX, currentPos[1] + deltaY);
