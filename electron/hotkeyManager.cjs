@@ -3,7 +3,6 @@ const { globalShortcut } = require('electron');
 class HotkeyManager {
   constructor() {
     this.hotkey = process.platform === 'darwin' ? 'Cmd+Shift+G' : 'Ctrl+Shift+G';
-    this.isRecording = false;
     this.mainWindow = null;
   }
 

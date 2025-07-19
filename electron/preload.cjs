@@ -32,6 +32,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('toggle-recording-hotkey');
   },
   
+  // 現在のホットキーを取得
+  getCurrentHotkey: () => ipcRenderer.invoke('get-current-hotkey'),
+  
   // クリップボードに書き込み
   writeToClipboard: (text) => ipcRenderer.invoke('write-to-clipboard', text),
 });

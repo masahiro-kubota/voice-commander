@@ -68,6 +68,11 @@ function setupIPCHandlers() {
       return { success: false, error: error.message };
     }
   });
+  
+  // 現在のホットキーを取得
+  ipcMain.handle('get-current-hotkey', async () => {
+    return hotkeyManager.getCurrentHotkey();
+  });
 }
 
 app.whenReady().then(() => {

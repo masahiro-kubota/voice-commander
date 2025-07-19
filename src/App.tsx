@@ -17,9 +17,18 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [platformHotkey, setPlatformHotkey] = useState('');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // プラットフォームに応じたホットキーを設定
+  useEffect(() => {
+    // Electronから現在のプラットフォームのホットキーを取得
+    window.electronAPI.getCurrentHotkey().then((hotkey: string) => {
+      setPlatformHotkey(hotkey);
+    });
+  }, []);
 
   // ホットキーイベントのリスナーを設定
   useEffect(() => {
@@ -191,7 +200,7 @@ function App() {
           </Box>
           
           <Chip 
-            label="ホットキー: Ctrl+Shift+G" 
+            label={`ホットキー: ${platformHotkey || 'Ctrl+Shift+G'}`} 
             size="small" 
             sx={{ mb: 2 }}
           />

@@ -28,6 +28,7 @@ interface ElectronAPI {
   // ホットキー関連
   onHotkeyToggle: (callback: () => void) => void;
   removeHotkeyListener: () => void;
+  getCurrentHotkey: () => Promise<string>;
   
   // クリップボード
   writeToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
