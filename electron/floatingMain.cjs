@@ -11,6 +11,30 @@ let openAIService = null;
 let hotkeyManager = null;
 let recordingHistory = [];
 
+// ウィンドウサイズ定数
+const WINDOW_SIZES = {
+  FLOATING: { width: 80, height: 80 },
+  TOAST: { width: 400, height: 120 },
+  MAIN: { width: 1000, height: 700 }
+};
+
+// 間隔・位置定数
+const SPACING = {
+  EDGE_MARGIN: 120,
+  BOTTOM_MARGIN: 140,
+  TOAST_OFFSET: 10,
+  TOAST_RIGHT_MARGIN: 420,
+  TOAST_CENTER_OFFSET: 160,
+  TOAST_TOP_OFFSET: 130
+};
+
+// タイマー定数
+const TIMERS = {
+  TOAST_DURATION: 3000,
+  COPY_NOTIFICATION: 1500,
+  COPY_RESET: 2000
+};
+
 // フローティングウィンドウを作成
 function createFloatingWindow() {
   const display = screen.getPrimaryDisplay();
@@ -18,10 +42,10 @@ function createFloatingWindow() {
   const height = display.bounds.height;
 
   floatingWindow = new BrowserWindow({
-    width: 80,   // 60 + 20px padding
-    height: 80,  // 60 + 20px padding
-    x: width - 120,  // 右端からもう少し離す（120ピクセル）
-    y: height - 140,  // 画面下端から140ピクセル上に配置
+    width: WINDOW_SIZES.FLOATING.width,
+    height: WINDOW_SIZES.FLOATING.height,
+    x: width - SPACING.EDGE_MARGIN,
+    y: height - SPACING.BOTTOM_MARGIN,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -75,41 +99,41 @@ function createToastWindow(text) {
     display = screen.getDisplayNearestPoint({ x: floatingX, y: floatingY });
     
     // フローティングボタンの右側に表示を試す
-    toastX = floatingX + floatingBounds.width + 10; // 右側に10px間隔
+    toastX = floatingX + floatingBounds.width + SPACING.TOAST_OFFSET;
     toastY = floatingY;
     
     // 右側に入らない場合は左側に表示
-    if (toastX + 400 > display.bounds.x + display.bounds.width) {
-      toastX = floatingX - 410; // 左側に10px間隔
+    if (toastX + WINDOW_SIZES.TOAST.width > display.bounds.x + display.bounds.width) {
+      toastX = floatingX - WINDOW_SIZES.TOAST.width - SPACING.TOAST_OFFSET;
     }
     
     // 左側にも入らない場合は上側に表示
-    if (toastX < display.bounds.x + 10) {
-      toastX = floatingX - 160; // ボタンの中央に合わせる（400/2 - 80/2 = 160）
-      toastY = floatingY - 130; // 上側に10px間隔
+    if (toastX < display.bounds.x + SPACING.TOAST_OFFSET) {
+      toastX = floatingX - SPACING.TOAST_CENTER_OFFSET;
+      toastY = floatingY - SPACING.TOAST_TOP_OFFSET;
       
       // 上側にも入らない場合は下側に表示
-      if (toastY < display.bounds.y + 10) {
-        toastY = floatingY + floatingBounds.height + 10; // 下側に10px間隔
+      if (toastY < display.bounds.y + SPACING.TOAST_OFFSET) {
+        toastY = floatingY + floatingBounds.height + SPACING.TOAST_OFFSET;
       }
     }
     
     // そのディスプレイの境界内に収まるように調整
-    toastX = Math.max(display.bounds.x + 10, 
-                     Math.min(toastX, display.bounds.x + display.bounds.width - 410));
-    toastY = Math.max(display.bounds.y + 10, 
-                     Math.min(toastY, display.bounds.y + display.bounds.height - 130));
+    toastX = Math.max(display.bounds.x + SPACING.TOAST_OFFSET, 
+                     Math.min(toastX, display.bounds.x + display.bounds.width - WINDOW_SIZES.TOAST.width - SPACING.TOAST_OFFSET));
+    toastY = Math.max(display.bounds.y + SPACING.TOAST_OFFSET, 
+                     Math.min(toastY, display.bounds.y + display.bounds.height - WINDOW_SIZES.TOAST.height - SPACING.TOAST_OFFSET));
     
   } else {
     // フローティングウィンドウがない場合はプライマリディスプレイの従来位置
     display = screen.getPrimaryDisplay();
-    toastX = display.bounds.x + display.bounds.width - 420;
-    toastY = display.bounds.y + display.bounds.height - 140;
+    toastX = display.bounds.x + display.bounds.width - SPACING.TOAST_RIGHT_MARGIN;
+    toastY = display.bounds.y + display.bounds.height - SPACING.BOTTOM_MARGIN;
   }
 
   toastWindow = new BrowserWindow({
-    width: 400,
-    height: 120,
+    width: WINDOW_SIZES.TOAST.width,
+    height: WINDOW_SIZES.TOAST.height,
     x: toastX,
     y: toastY,
     frame: false,
@@ -179,7 +203,7 @@ function createToastWindow(text) {
         <script>
           setTimeout(() => {
             window.close();
-          }, 3000);
+          }, ${TIMERS.TOAST_DURATION});
         </script>
       </body>
     </html>
@@ -195,8 +219,8 @@ function createToastWindow(text) {
 // メインウィンドウを作成
 function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: WINDOW_SIZES.MAIN.width,
+    height: WINDOW_SIZES.MAIN.height,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
