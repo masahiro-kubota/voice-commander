@@ -11,6 +11,9 @@
 - ⌨️ グローバルホットキー（Ctrl+Shift+G）
 - 🔐 安全なAPIキー管理
 
+[Screencast from 2025年07月20日 07時28分55秒.webm](https://github.com/user-attachments/assets/5e62dc04-46be-414d-bacb-a6da075a3390)
+
+
 ## インストール
 
 ### AppImageを使用する場合（Linux）
