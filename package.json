@@ -2,6 +2,8 @@
   "name": "voice-commander",
   "private": true,
   "version": "0.0.0",
+  "description": "Voice Commander - A voice transcription app with floating widget",
+  "author": "Masahiro Kubota",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {

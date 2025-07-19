@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -40,6 +43,7 @@ jobs:
       - name: Build Electron app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ matrix.platform }}" = "linux" ]; then
             npm run dist -- --linux
