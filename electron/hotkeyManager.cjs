@@ -23,6 +23,10 @@ class HotkeyManager {
 
     // ホットキーを登録
     try {
+      if (globalShortcut.isRegistered(this.hotkey)) {
+        console.log(`ホットキーは既に登録されています: ${this.hotkey}`);
+        return true;
+      }
       const success = globalShortcut.register(this.hotkey, toggleRecording);
       
       if (success) {

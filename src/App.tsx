@@ -146,32 +146,33 @@ function App() {
     });
   }, []);
 
+  // ホットキートグルのハンドラー
+  const handleHotkeyToggle = useCallback(() => {
+    console.log('ホットキー押下を検出');
+    // isRecordingの最新の値を使用するため、直接状態を更新
+    setIsRecording(prev => {
+      if (prev) {
+        // 録音停止
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+        return false;
+      } else {
+        // 録音開始
+        startRecording();
+        return true;
+      }
+    });
+  }, [startRecording]);
+
   // ホットキーイベントのリスナーを設定
   useEffect(() => {
-    const handleHotkeyToggle = () => {
-      console.log('ホットキー押下を検出');
-      // isRecordingの最新の値を使用するため、直接状態を更新
-      setIsRecording(prev => {
-        if (prev) {
-          // 録音停止
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-          }
-          return false;
-        } else {
-          // 録音開始
-          startRecording();
-          return true;
-        }
-      });
-    };
-
     const removeCallback = window.electronAPI.onHotkeyToggle(handleHotkeyToggle);
 
     return () => {
       window.electronAPI.removeHotkeyListener(removeCallback);
     };
-  }, [startRecording]); // startRecordingを依存配列に追加
+  }, [handleHotkeyToggle]);
 
   return (
     <ThemeProvider theme={theme}>
