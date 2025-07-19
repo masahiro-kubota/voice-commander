@@ -65,9 +65,13 @@ function App() {
       mediaRecorder.start();
       setIsRecording(true);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('録音開始エラー:', err);
-      setError('マイクへのアクセスが拒否されました。');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('マイクへのアクセスが拒否されました。');
+      }
     }
   };
   
@@ -85,9 +89,13 @@ function App() {
     try {
       const result = await transcribeAudio(audioBlob, 'ja'); // 日本語に固定
       setTranscript(result.text);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
-      setError(err.message || '文字起こし中にエラーが発生しました。');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('文字起こし中にエラーが発生しました。');
+      }
     } finally {
       setIsProcessing(false);
     }

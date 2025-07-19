@@ -13,7 +13,7 @@ export interface TranscriptionResult {
 
 export interface TranscriptionError {
   error: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -53,19 +53,24 @@ export async function transcribeAudio(
       text: transcription.text.trim(),
       language: transcription.language
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('文字起こしエラー:', error);
     
     // エラーメッセージを整形
     let errorMessage = '文字起こし中にエラーが発生しました';
     
-    if (error.status === 401) {
-      errorMessage = 'APIキーが無効です。正しいAPIキーを設定してください。';
-    } else if (error.status === 429) {
-      errorMessage = 'APIの利用制限に達しました。しばらく待ってから再試行してください。';
-    } else if (error.status === 413) {
-      errorMessage = 'ファイルサイズが大きすぎます。25MB以下のファイルを使用してください。';
-    } else if (error.message) {
+    if (error && typeof error === 'object' && 'status' in error) {
+      const status = (error as any).status;
+      if (status === 401) {
+        errorMessage = 'APIキーが無効です。正しいAPIキーを設定してください。';
+      } else if (status === 429) {
+        errorMessage = 'APIの利用制限に達しました。しばらく待ってから再試行してください。';
+      } else if (status === 413) {
+        errorMessage = 'ファイルサイズが大きすぎます。25MB以下のファイルを使用してください。';
+      }
+    }
+    
+    if (error instanceof Error && error.message) {
       errorMessage = error.message;
     }
     
@@ -111,7 +116,8 @@ export async function estimateAudioDuration(audioBlob: Blob): Promise<number> {
     audio.addEventListener('error', () => {
       URL.revokeObjectURL(url);
       // エラーの場合はサイズから推定（webmの場合、約10KB/秒）
-      resolve(audioBlob.size / 10000);
+      const ESTIMATED_WEBM_BYTES_PER_SECOND = 10000;
+      resolve(audioBlob.size / ESTIMATED_WEBM_BYTES_PER_SECOND);
     });
     
     audio.src = url;
