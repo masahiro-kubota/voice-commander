@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
 
+// 定数定義
+const ESTIMATED_WEBM_BYTES_PER_SECOND = 10000; // webmの場合、約10KB/秒
+
 // OpenAIクライアントの初期化
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
@@ -115,8 +118,7 @@ export async function estimateAudioDuration(audioBlob: Blob): Promise<number> {
     
     audio.addEventListener('error', () => {
       URL.revokeObjectURL(url);
-      // エラーの場合はサイズから推定（webmの場合、約10KB/秒）
-      const ESTIMATED_WEBM_BYTES_PER_SECOND = 10000;
+      // エラーの場合はサイズから推定
       resolve(audioBlob.size / ESTIMATED_WEBM_BYTES_PER_SECOND);
     });
     
