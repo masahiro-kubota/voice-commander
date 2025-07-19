@@ -92,10 +92,11 @@ function createToastWindow(text) {
   const CHARS_PER_LINE = 40;
   const LINE_HEIGHT = 22;
   const MIN_CONTENT_HEIGHT = 60;
+  const MAX_CONTENT_HEIGHT = 200; // 最大高さを制限
   const HEADER_PADDING = 80;
   
   const lines = Math.ceil(text.length / CHARS_PER_LINE);
-  const contentHeight = Math.max(MIN_CONTENT_HEIGHT, lines * LINE_HEIGHT);
+  const contentHeight = Math.min(MAX_CONTENT_HEIGHT, Math.max(MIN_CONTENT_HEIGHT, lines * LINE_HEIGHT));
   const windowHeight = contentHeight + HEADER_PADDING;
   
   // フローティングウィンドウの現在位置を取得
@@ -194,6 +195,8 @@ function createToastWindow(text) {
             font-size: 14px;
             word-break: break-word;
             line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
           }
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -287,10 +290,22 @@ function createApiKeyWindow() {
     apiKeyWindow = null;
   });
 
-  // フォーカスが外れたら閉じる
+  // フォーカスが外れたら遅延して閉じる
+  let blurTimeout = null;
   apiKeyWindow.on('blur', () => {
-    if (apiKeyWindow && !apiKeyWindow.isDestroyed()) {
-      apiKeyWindow.close();
+    // 遅延を設けることで、ウィンドウ内の要素間のフォーカス移動で閉じないようにする
+    blurTimeout = setTimeout(() => {
+      if (apiKeyWindow && !apiKeyWindow.isDestroyed()) {
+        apiKeyWindow.close();
+      }
+    }, 100);
+  });
+  
+  apiKeyWindow.on('focus', () => {
+    // フォーカスが戻った場合はタイマーをクリア
+    if (blurTimeout) {
+      clearTimeout(blurTimeout);
+      blurTimeout = null;
     }
   });
 }

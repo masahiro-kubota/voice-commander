@@ -94,7 +94,15 @@ function ApiKeyInput() {
       if (result) {
         setSaved(true);
         setTimeout(() => {
-          window.close();
+          try {
+            try {
+        window.close();
+      } catch (e) {
+        console.error('ウィンドウを閉じる際にエラーが発生しました:', e);
+      }
+          } catch (e) {
+            console.error('ウィンドウを閉じる際にエラーが発生しました:', e);
+          }
         }, TIMERS.CLOSE_DELAY);
       } else {
         setError('保存に失敗しました');
@@ -112,7 +120,11 @@ function ApiKeyInput() {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
-      window.close();
+      try {
+        window.close();
+      } catch (e) {
+        console.error('ウィンドウを閉じる際にエラーが発生しました:', e);
+      }
     }
   };
 
@@ -141,6 +153,7 @@ function ApiKeyInput() {
           onKeyPress={handleKeyPress}
           placeholder="OpenAI API Key (sk-...)"
           disabled={loading || saved}
+          autoComplete="off"
           sx={{
             '& .MuiOutlinedInput-root': {
               backgroundColor: COLORS.INPUT_BACKGROUND,
