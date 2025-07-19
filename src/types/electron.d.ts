@@ -24,6 +24,13 @@ interface ElectronAPI {
   // 既存のメッセージング
   sendMessage: (channel: string, data: any) => void;
   onMessage: (channel: string, func: (...args: any[]) => void) => void;
+  
+  // ホットキー関連
+  onHotkeyToggle: (callback: () => void) => void;
+  removeHotkeyListener: () => void;
+  
+  // クリップボード
+  writeToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface Window {

@@ -16,9 +16,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   onMessage: (channel, func) => {
-    const validChannels = ['fromMain'];
+    const validChannels = ['fromMain', 'toggle-recording-hotkey'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
+  
+  // ホットキーイベントのリスナー
+  onHotkeyToggle: (callback) => {
+    ipcRenderer.on('toggle-recording-hotkey', callback);
+  },
+  
+  // リスナーの削除
+  removeHotkeyListener: () => {
+    ipcRenderer.removeAllListeners('toggle-recording-hotkey');
+  },
+  
+  // クリップボードに書き込み
+  writeToClipboard: (text) => ipcRenderer.invoke('write-to-clipboard', text),
 });

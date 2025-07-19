@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton } from '@mui/material';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton, Chip } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -20,6 +20,33 @@ function App() {
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // ホットキーイベントのリスナーを設定
+  useEffect(() => {
+    const handleHotkeyToggle = () => {
+      console.log('ホットキー押下を検出');
+      // isRecordingの最新の値を使用するため、直接状態を更新
+      setIsRecording(prev => {
+        if (prev) {
+          // 録音停止
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+          }
+          return false;
+        } else {
+          // 録音開始
+          startRecording();
+          return true;
+        }
+      });
+    };
+
+    window.electronAPI.onHotkeyToggle(handleHotkeyToggle);
+
+    return () => {
+      window.electronAPI.removeHotkeyListener();
+    };
+  }, []); // 依存配列を空にして、一度だけ登録
 
   const handleToggleRecording = async () => {
     if (isRecording) {
@@ -97,10 +124,21 @@ function App() {
         { language: 'ja', responseFormat: 'verbose_json' }
       );
       
-      if (result.success) {
-        setTranscript(result.data.text);
+      if (result.success && result.data) {
+        const transcribedText = result.data.text;
+        setTranscript(transcribedText);
+        
+        // 自動的にクリップボードにコピー（Electron経由）
+        if (transcribedText) {
+          const clipboardResult = await window.electronAPI.writeToClipboard(transcribedText);
+          if (clipboardResult.success) {
+            setIsCopied(true);
+            setSnackbarOpen(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          }
+        }
       } else {
-        throw new Error(result.error);
+        throw new Error(result.error || '文字起こしに失敗しました');
       }
     } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
@@ -151,6 +189,12 @@ function App() {
               <SettingsIcon />
             </IconButton>
           </Box>
+          
+          <Chip 
+            label="ホットキー: Ctrl+Shift+G" 
+            size="small" 
+            sx={{ mb: 2 }}
+          />
 
           <Box sx={{ my: 4 }}>
             <RecordButton
