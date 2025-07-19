@@ -6,8 +6,12 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:floating": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron:floating\"",
+    "dev:floating-debug": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron:floating:debug\"",
     "dev:vite": "vite",
     "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "dev:electron:floating": "wait-on tcp:5173 && cross-env NODE_ENV=development FLOATING_MODE=true electron .",
+    "dev:electron:floating:debug": "wait-on tcp:5173 && cross-env NODE_ENV=development FLOATING_MODE=true FLOATING_DEBUG=true electron .",
     "build": "npm run build:vite && npm run build:electron",
     "build:vite": "tsc -b && vite build",
     "build:electron": "echo 'Using .cjs files directly'",

@@ -42,4 +42,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // クリップボードに書き込み
   writeToClipboard: (text) => ipcRenderer.invoke('write-to-clipboard', text),
+  
+  // フローティングウィンドウ用
+  toggleRecording: () => ipcRenderer.send('toggle-recording'),
+  updateRecordingState: (isRecording) => ipcRenderer.send('update-recording-state', isRecording),
+  onToggleRecording: (callback) => {
+    ipcRenderer.on('toggle-recording-request', callback);
+  },
+  removeToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-recording-request');
+  },
+  onRecordingStateChange: (callback) => {
+    ipcRenderer.on('recording-state-changed', (event, state) => callback(state));
+  },
+  showMainWindow: () => ipcRenderer.send('show-main-window'),
+  
+  // ウィンドウ移動用
+  moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', deltaX, deltaY),
 });

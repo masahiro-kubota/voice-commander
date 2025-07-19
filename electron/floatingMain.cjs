@@ -1,0 +1,393 @@
+const { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage } = require('electron');
+const path = require('path');
+const OpenAIService = require('./openai-service.cjs');
+const HotkeyManager = require('./hotkeyManager.cjs');
+
+let mainWindow = null;
+let floatingWindow = null;
+let toastWindow = null;
+let tray = null;
+let openAIService = null;
+let hotkeyManager = null;
+let recordingHistory = [];
+
+// フローティングウィンドウを作成
+function createFloatingWindow() {
+  const display = screen.getPrimaryDisplay();
+  const width = display.bounds.width;
+  const height = display.bounds.height;
+
+  floatingWindow = new BrowserWindow({
+    width: 80,   // 60 + 20px padding
+    height: 80,  // 60 + 20px padding
+    x: width - 120,  // 右端からもう少し離す（120ピクセル）
+    y: height - 140,  // 画面下端から140ピクセル上に配置
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    backgroundColor: '#00000000', // 完全に透明
+    hasShadow: false,
+    movable: true,  // ウィンドウの移動を有効にする
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false,
+    },
+  });
+  
+  // ウィンドウレベルを設定（macOSとWindowsで異なる）
+  if (process.platform === 'darwin') {
+    floatingWindow.setAlwaysOnTop(true, 'floating');
+  } else {
+    floatingWindow.setAlwaysOnTop(true, 'screen-saver');
+  }
+
+  // 開発環境の場合
+  if (process.env.NODE_ENV === 'development') {
+    floatingWindow.loadURL('http://localhost:5173/floating.html');
+    // デバッグフラグが設定されている場合のみ開発者ツールを開く
+    if (process.env.FLOATING_DEBUG === 'true') {
+      floatingWindow.webContents.openDevTools({ mode: 'detach' });
+    }
+  } else {
+    floatingWindow.loadFile(path.join(__dirname, '../dist/floating.html'));
+  }
+
+  floatingWindow.on('closed', () => {
+    floatingWindow = null;
+  });
+}
+
+// トースト通知ウィンドウを作成
+function createToastWindow(text) {
+  // フローティングウィンドウの現在位置を取得
+  let toastX, toastY;
+  let display;
+  
+  if (floatingWindow) {
+    const [floatingX, floatingY] = floatingWindow.getPosition();
+    const floatingBounds = floatingWindow.getBounds();
+    
+    // フローティングウィンドウがあるディスプレイを特定
+    display = screen.getDisplayNearestPoint({ x: floatingX, y: floatingY });
+    
+    // フローティングボタンの右側に表示を試す
+    toastX = floatingX + floatingBounds.width + 10; // 右側に10px間隔
+    toastY = floatingY;
+    
+    // 右側に入らない場合は左側に表示
+    if (toastX + 400 > display.bounds.x + display.bounds.width) {
+      toastX = floatingX - 410; // 左側に10px間隔
+    }
+    
+    // 左側にも入らない場合は上側に表示
+    if (toastX < display.bounds.x + 10) {
+      toastX = floatingX - 160; // ボタンの中央に合わせる（400/2 - 80/2 = 160）
+      toastY = floatingY - 130; // 上側に10px間隔
+      
+      // 上側にも入らない場合は下側に表示
+      if (toastY < display.bounds.y + 10) {
+        toastY = floatingY + floatingBounds.height + 10; // 下側に10px間隔
+      }
+    }
+    
+    // そのディスプレイの境界内に収まるように調整
+    toastX = Math.max(display.bounds.x + 10, 
+                     Math.min(toastX, display.bounds.x + display.bounds.width - 410));
+    toastY = Math.max(display.bounds.y + 10, 
+                     Math.min(toastY, display.bounds.y + display.bounds.height - 130));
+    
+  } else {
+    // フローティングウィンドウがない場合はプライマリディスプレイの従来位置
+    display = screen.getPrimaryDisplay();
+    toastX = display.bounds.x + display.bounds.width - 420;
+    toastY = display.bounds.y + display.bounds.height - 140;
+  }
+
+  toastWindow = new BrowserWindow({
+    width: 400,
+    height: 120,
+    x: toastX,
+    y: toastY,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    focusable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  // トースト用のHTMLを動的に生成
+  const toastHTML = `
+    <html>
+      <head>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          }
+          .toast {
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
+          }
+          .success-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #4caf50;
+            font-weight: 500;
+          }
+          .transcript {
+            color: white;
+            font-size: 14px;
+            word-break: break-word;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="toast">
+          <div class="success-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+            <span>コピーしました</span>
+          </div>
+          <div class="transcript">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </div>
+        <script>
+          setTimeout(() => {
+            window.close();
+          }, 3000);
+        </script>
+      </body>
+    </html>
+  `;
+
+  toastWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(toastHTML)}`);
+
+  toastWindow.on('closed', () => {
+    toastWindow = null;
+  });
+}
+
+// メインウィンドウを作成
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  // 開発環境の場合
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.loadURL('http://localhost:5173');
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// システムトレイを作成
+function createTray() {
+  // トレイアイコンを作成（実際のアイコンファイルが必要）
+  const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHJSURBVDiNpZO9S1VRHMc/5773vvdeX3zJl0zT1FQUESQhCBoaWqKhpSGIoKE/oKGhoaWlpSGipSGipaEhCMKmhiAicsEXUEvT6733nnPObwhtQj1Sz+mczznf7/fLOd/vgf8VWmt2794Nra2tpz3PG1JKlQBkMplomqZ3tNYP4/H4OwDZLmFzczNdXV2DQggxNTUVTU5ORpIkQQgBgFIKz/NobGwUHR0d4sCBA/2u694bGRmxAGIrg87OztPZbPZWPB4vTE9PR/Pz82RrNRobGykvL8d1XZRS+L6P1pq6ujqxZ8+eYMn8UmvdAiBWGXR0dLTm8/kXQRBYCwsLaHYgBPl8nvn5eYQQaK0BqKmpwXEcXV1dLa1du3YjgFxhYBhGr2EYN8fHx6OlLyzLyvvAMAw2bNhAPp/n169fCCEAmJmZoVAo8OzZs+Dz58+DH+5+z2G1kjEAY2Nj0TZF0zRZXFzk48ePxHGMlBKAmpoaqqqqGB4ejr59+3ZutSGAWCGklHrQ19d3ORaLHfZ9/5OU8kyWZRmGYaCUQghBEAT4vo/jOJSUlLC8vCytdevqBQD19fX09PRMbtu2Lfr9+zdxHBPHMVprHMfB933Gx8fjr1+/juzu7m7+q9Bf6g9l7K1xDd3k1AAAAABJRU5ErkJggg==');
+  tray = new Tray(icon);
+
+  updateTrayMenu();
+
+  tray.setToolTip('Voice Commander');
+}
+
+// トレイメニューを更新
+function updateTrayMenu() {
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'メインウィンドウを表示',
+      click: () => {
+        if (!mainWindow) {
+          createMainWindow();
+        }
+        mainWindow.show();
+      },
+    },
+    {
+      label: '認識履歴',
+      submenu: recordingHistory.length > 0 
+        ? recordingHistory.slice(-10).reverse().map((item, index) => ({
+            label: `${index + 1}. ${item.text.substring(0, 30)}${item.text.length > 30 ? '...' : ''}`,
+            click: () => {
+              clipboard.writeText(item.text);
+            },
+          }))
+        : [{ label: '履歴なし', enabled: false }],
+    },
+    {
+      label: '設定',
+      click: () => {
+        if (!mainWindow) {
+          createMainWindow();
+        }
+        mainWindow.show();
+        mainWindow.webContents.send('open-settings');
+      },
+    },
+    { type: 'separator' },
+    {
+      label: '終了',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+}
+
+// IPC ハンドラーの設定
+function setupIPCHandlers() {
+  // 既存のハンドラー
+  ipcMain.handle('get-api-key', async () => {
+    return openAIService.getApiKey();
+  });
+  
+  ipcMain.handle('set-api-key', async (event, apiKey) => {
+    return openAIService.setApiKey(apiKey);
+  });
+  
+  ipcMain.handle('test-api-key', async (event, apiKey) => {
+    return openAIService.testApiKey(apiKey);
+  });
+  
+  ipcMain.handle('transcribe-audio', async (event, audioBuffer, options) => {
+    try {
+      const result = await openAIService.transcribeAudio(audioBuffer, options);
+      
+      // 履歴に追加
+      if (result && result.text) {
+        recordingHistory.push({
+          text: result.text,
+          timestamp: new Date(),
+        });
+        updateTrayMenu();
+      }
+      
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+  
+  ipcMain.handle('write-to-clipboard', async (event, text) => {
+    try {
+      clipboard.writeText(text);
+      // トースト通知を表示
+      createToastWindow(text);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+  
+  ipcMain.handle('get-current-hotkey', async () => {
+    return hotkeyManager.getCurrentHotkey();
+  });
+
+  // フローティングウィンドウ用の新しいハンドラー
+  ipcMain.on('toggle-recording', () => {
+    if (floatingWindow) {
+      floatingWindow.webContents.send('toggle-recording-request');
+    }
+  });
+
+  ipcMain.on('update-recording-state', (event, isRecording) => {
+    // フローティングウィンドウのUIを更新
+    if (floatingWindow) {
+      floatingWindow.webContents.send('recording-state-changed', isRecording);
+    }
+  });
+
+  // メインウィンドウを表示
+  ipcMain.on('show-main-window', () => {
+    if (!mainWindow) {
+      createMainWindow();
+    }
+    mainWindow.show();
+  });
+
+  // ウィンドウ移動
+  ipcMain.on('move-window', (event, deltaX, deltaY) => {
+    if (floatingWindow) {
+      const currentPos = floatingWindow.getPosition();
+      floatingWindow.setPosition(currentPos[0] + deltaX, currentPos[1] + deltaY);
+    }
+  });
+}
+
+app.whenReady().then(() => {
+  // OpenAIサービスを初期化
+  openAIService = new OpenAIService();
+  
+  // ホットキーマネージャーを初期化
+  hotkeyManager = new HotkeyManager();
+  
+  // IPC ハンドラーを設定
+  setupIPCHandlers();
+  
+  // フローティングウィンドウとトレイを作成
+  createFloatingWindow();
+  createTray();
+  
+  // ホットキーマネージャーにフローティングウィンドウを設定
+  hotkeyManager.setMainWindow(floatingWindow);
+  hotkeyManager.initialize();
+
+  app.on('activate', () => {
+    if (!floatingWindow) {
+      createFloatingWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  // アプリを終了しない（トレイで動作を継続）
+});
+
+// アプリ終了時の処理
+app.on('will-quit', () => {
+  if (hotkeyManager) {
+    hotkeyManager.unregisterAll();
+  }
+  if (tray) {
+    tray.destroy();
+  }
+});

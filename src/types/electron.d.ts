@@ -32,6 +32,17 @@ interface ElectronAPI {
   
   // クリップボード
   writeToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
+  
+  // フローティングウィンドウ用
+  toggleRecording: () => void;
+  updateRecordingState: (isRecording: boolean) => void;
+  onToggleRecording: (callback: () => void) => void;
+  removeToggleListener: () => void;
+  onRecordingStateChange: (callback: (state: boolean) => void) => void;
+  showMainWindow: () => void;
+  
+  // ウィンドウ移動
+  moveWindow: (deltaX: number, deltaY: number) => void;
 }
 
 interface Window {
