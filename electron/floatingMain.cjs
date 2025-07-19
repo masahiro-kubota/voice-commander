@@ -348,9 +348,27 @@ function createMainWindow() {
 
 // システムトレイを作成
 function createTray() {
-  // トレイアイコンを作成（実際のアイコンファイルが必要）
-  const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHJSURBVDiNpZO9S1VRHMc/5773vvdeX3zJl0zT1FQUESQhCBoaWqKhpSGIoKE/oKGhoaWlpSGipSGipaEhCMKmhiAicsEXUEvT6733nnPObwhtQj1Sz+mczznf7/fLOd/vgf8VWmt2794Nra2tpz3PG1JKlQBkMplomqZ3tNYP4/H4OwDZLmFzczNdXV2DQggxNTUVTU5ORpIkQQgBgFIKz/NobGwUHR0d4sCBA/2u694bGRmxAGIrg87OztPZbPZWPB4vTE9PR/Pz82RrNRobGykvL8d1XZRS+L6P1pq6ujqxZ8+eYMn8UmvdAiBWGXR0dLTm8/kXQRBYCwsLaHYgBPl8nvn5eYQQaK0BqKmpwXEcXV1dLa1du3YjgFxhYBhGr2EYN8fHx6OlLyzLyvvAMAw2bNhAPp/n169fCCEAmJmZoVAo8OzZs+Dz58+DH+5+z2G1kjEAY2Nj0TZF0zRZXFzk48ePxHGMlBKAmpoaqqqqGB4ejr59+3ZutSGAWCGklHrQ19d3ORaLHfZ9/5OU8kyWZRmGYaCUQghBEAT4vo/jOJSUlLC8vCytdevqBQD19fX09PRMbtu2Lfr9+zdxHBPHMVprHMfB933Gx8fjr1+/juzu7m7+q9Bf6g9l7K1xDd3k1AAAAABJRU5ErkJggg==');
-  tray = new Tray(icon);
+  // トレイアイコンを作成
+  let iconPath;
+  if (process.env.NODE_ENV === 'development') {
+    iconPath = path.join(__dirname, '../build/icon.png');
+  } else {
+    // AppImageの場合、アプリケーションのリソースから読み込む
+    iconPath = path.join(process.resourcesPath, 'app/build/icon.png');
+  }
+  
+  // アイコンファイルが存在するか確認
+  const fs = require('fs');
+  if (fs.existsSync(iconPath)) {
+    const icon = nativeImage.createFromPath(iconPath);
+    // トレイ用に小さくリサイズ（16x16 または 22x22）
+    const trayIcon = icon.resize({ width: 22, height: 22 });
+    tray = new Tray(trayIcon);
+  } else {
+    // フォールバック: データURLを使用
+    const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHJSURBVDiNpZO9S1VRHMc/5773vvdeX3zJl0zT1FQUESQhCBoaWqKhpSGIoKE/oKGhoaWlpSGipSGipaEhCMKmhiAicsEXUEvT6733nnPObwhtQj1Sz+mczznf7/fLOd/vgf8VWmt2794Nra2tpz3PG1JKlQBkMplomqZ3tNYP4/H4OwDZLmFzczNdXV2DQggxNTUVTU5ORpIkQQgBgFIKz/NobGwUHR0d4sCBA/2u694bGRmxAGIrg87OztPZbPZWPB4vTE9PR/Pz82RrNRobGykvL8d1XZRS+L6P1pq6ujqxZ8+eYMn8UmvdAiBWGXR0dLTm8/kXQRBYCwsLaHYgBPl8nvn5eYQQaK0BqKmpwXEcXV1dLa1du3YjgFxhYBhGr2EYN8fHx6OlLyzLyvvAMAw2bNhAPp/n169fCCEAmJmZoVAo8OzZs+Dz58+DH+5+z2G1kjEAY2Nj0TZF0zRZXFzk48ePxHGMlBKAmpoaqqqqGB4ejr59+3ZutSGAWCGklHrQ19d3ORaLHfZ9/5OU8kyWZRmGYaCUQghBEAT4vo/jOJSUlLC8vCytdevqBQD19fX09PRMbtu2Lfr9+zdxHBPHMVprHMfB933Gx8fjr1+/juzu7m7+q9Bf6g9l7K1xDd3k1AAAAABJRU5ErkJggg==');
+    tray = new Tray(icon);
+  }
 
   updateTrayMenu();
 

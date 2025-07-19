@@ -10,7 +10,26 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-electron
 *.local
+
+# Electron Builder output
+dist_electron/
+build/*
+!build/icon.png
+*.AppImage
+*.snap
+*.deb
+*.rpm
+*.dmg
+*.pkg
+*.exe
+*.blockmap
+.electron-builder.yml
+
+# TypeScript
+*.tsbuildinfo
+.tmp/
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +41,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# Application specific
+config.json
+userData/

@@ -1,5 +1,5 @@
 {
-  "name": "voice-commander2",
+  "name": "voice-commander",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -47,5 +47,29 @@
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.4",
     "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.voicecommander.app",
+    "productName": "Voice Commander",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*.cjs"
+    ],
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png"
+    },
+    "appImage": {
+      "artifactName": "Voice-Commander-${version}-${arch}.AppImage"
+    }
   }
 }
