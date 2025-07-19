@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton, Chip } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
@@ -22,40 +22,6 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // プラットフォームに応じたホットキーを設定
-  useEffect(() => {
-    // Electronから現在のプラットフォームのホットキーを取得
-    window.electronAPI.getCurrentHotkey().then((hotkey: string) => {
-      setPlatformHotkey(hotkey);
-    });
-  }, []);
-
-  // ホットキーイベントのリスナーを設定
-  useEffect(() => {
-    const handleHotkeyToggle = () => {
-      console.log('ホットキー押下を検出');
-      // isRecordingの最新の値を使用するため、直接状態を更新
-      setIsRecording(prev => {
-        if (prev) {
-          // 録音停止
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-          }
-          return false;
-        } else {
-          // 録音開始
-          startRecording();
-          return true;
-        }
-      });
-    };
-
-    window.electronAPI.onHotkeyToggle(handleHotkeyToggle);
-
-    return () => {
-      window.electronAPI.removeHotkeyListener();
-    };
-  }, []); // 依存配列を空にして、一度だけ登録
 
   const handleToggleRecording = async () => {
     if (isRecording) {
@@ -67,7 +33,7 @@ function App() {
     }
   };
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -111,7 +77,7 @@ function App() {
         setError('マイクへのアクセスが拒否されました。');
       }
     }
-  };
+  }, []);
   
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -120,7 +86,7 @@ function App() {
     }
   };
   
-  const processAudio = async (audioBlob: Blob) => {
+  const processAudio = useCallback(async (audioBlob: Blob) => {
     setIsProcessing(true);
     setError(null);
     
@@ -159,7 +125,7 @@ function App() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, []);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(transcript);
@@ -171,6 +137,41 @@ function App() {
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
+
+  // プラットフォームに応じたホットキーを設定
+  useEffect(() => {
+    // Electronから現在のプラットフォームのホットキーを取得
+    window.electronAPI.getCurrentHotkey().then((hotkey: string) => {
+      setPlatformHotkey(hotkey);
+    });
+  }, []);
+
+  // ホットキーイベントのリスナーを設定
+  useEffect(() => {
+    const handleHotkeyToggle = () => {
+      console.log('ホットキー押下を検出');
+      // isRecordingの最新の値を使用するため、直接状態を更新
+      setIsRecording(prev => {
+        if (prev) {
+          // 録音停止
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+          }
+          return false;
+        } else {
+          // 録音開始
+          startRecording();
+          return true;
+        }
+      });
+    };
+
+    const removeCallback = window.electronAPI.onHotkeyToggle(handleHotkeyToggle);
+
+    return () => {
+      window.electronAPI.removeHotkeyListener(removeCallback);
+    };
+  }, [startRecording]); // startRecordingを依存配列に追加
 
   return (
     <ThemeProvider theme={theme}>

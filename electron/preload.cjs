@@ -24,12 +24,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // ホットキーイベントのリスナー
   onHotkeyToggle: (callback) => {
-    ipcRenderer.on('toggle-recording-hotkey', callback);
+    const wrappedCallback = () => callback();
+    ipcRenderer.on('toggle-recording-hotkey', wrappedCallback);
+    // コールバックを返して後で削除できるようにする
+    return wrappedCallback;
   },
   
   // リスナーの削除
-  removeHotkeyListener: () => {
-    ipcRenderer.removeAllListeners('toggle-recording-hotkey');
+  removeHotkeyListener: (callback) => {
+    if (callback) {
+      ipcRenderer.removeListener('toggle-recording-hotkey', callback);
+    }
   },
   
   // 現在のホットキーを取得

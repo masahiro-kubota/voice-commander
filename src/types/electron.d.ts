@@ -26,8 +26,8 @@ interface ElectronAPI {
   onMessage: (channel: string, func: (...args: any[]) => void) => void;
   
   // ホットキー関連
-  onHotkeyToggle: (callback: () => void) => void;
-  removeHotkeyListener: () => void;
+  onHotkeyToggle: (callback: () => void) => () => void;
+  removeHotkeyListener: (callback?: () => void) => void;
   getCurrentHotkey: () => Promise<string>;
   
   // クリップボード

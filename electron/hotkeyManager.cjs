@@ -17,7 +17,7 @@ class HotkeyManager {
       // レンダラープロセスに録音トグルを通知
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.webContents.send('toggle-recording-hotkey');
-        console.log('録音トグル: ホットキー押下');
+        console.log('録音トグルリクエストを送信');
       }
     };
 
@@ -29,7 +29,7 @@ class HotkeyManager {
         console.log(`ホットキー登録成功: ${this.hotkey}`);
         return true;
       } else {
-        console.error(`ホットキー登録失敗: ${this.hotkey}`);
+        console.error(`ホットキー登録失敗: ${this.hotkey} - 他のアプリケーションで既に使用されている可能性があります`);
         return false;
       }
     } catch (error) {
