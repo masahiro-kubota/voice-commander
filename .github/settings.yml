@@ -1,0 +1,79 @@
+# .github/settings.yml
+# Probot Settings App用の設定ファイル
+# https://github.com/apps/settings をリポジトリにインストールしてください
+
+repository:
+  # リポジトリ基本設定
+  name: my-repo
+  description: My awesome repository
+  private: false
+  default_branch: main
+  
+  # マージ方法の設定
+  allow_squash_merge: true      # スカッシュマージを許可
+  allow_merge_commit: false     # マージコミットを禁止（履歴をクリーンに）
+  allow_rebase_merge: true      # リベースマージを許可
+  
+  # スカッシュマージ時のコミットメッセージ設定
+  squash_merge_commit_title: "PR_TITLE"        # PRタイトルを使用
+  squash_merge_commit_message: "COMMIT_MESSAGES" # コミットメッセージを含める
+  
+  # 機能の有効/無効
+  has_issues: true
+  has_projects: false
+  has_wiki: false
+  
+  # マージ後の自動削除
+  delete_branch_on_merge: true
+
+# ブランチ保護ルール
+branches:
+  - name: main
+    protection:
+      # PRレビュー必須設定
+      required_pull_request_reviews:
+        required_approving_review_count: 1  # 最低1人の承認が必要
+        dismiss_stale_reviews: true         # コード変更時に古いレビューを無効化
+        require_code_owner_reviews: false   # CODEOWNERSのレビューは任意
+      
+      # ステータスチェック（CI/CD）
+      required_status_checks:
+        strict: true                        # マージ前に最新の状態でチェック必須
+        contexts: []                        # 必要なCIジョブ名を追加（例: ["test", "build"]）
+      
+      # 基本的な保護設定
+      enforce_admins: false               # 管理者は保護をバイパス可能
+      required_linear_history: false      # リニアな履歴は必須としない
+      allow_force_pushes: false          # 強制プッシュ禁止
+      allow_deletions: false             # ブランチ削除禁止
+      
+      # プッシュ制限（必要に応じてコメントアウトを解除）
+      # restrictions:
+      #   users: []
+      #   teams: ["maintainers"]
+
+# ラベル設定（オプション）
+labels:
+  - name: bug
+    color: d73a4a
+    description: Something isn't working
+  - name: enhancement
+    color: a2eeef
+    description: New feature or request
+  - name: documentation
+    color: 0075ca
+    description: Improvements or additions to documentation
+  - name: good first issue
+    color: 7057ff
+    description: Good for newcomers
+
+# チーム/コラボレーター設定（オプション）
+# teams:
+#   - name: maintainers
+#     permission: push
+#   - name: contributors
+#     permission: pull
+
+# collaborators:
+#   - username: octocat
+#     permission: admin
