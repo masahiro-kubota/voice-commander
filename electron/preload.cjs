@@ -16,9 +16,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   onMessage: (channel, func) => {
-    const validChannels = ['fromMain'];
+    const validChannels = ['fromMain', 'toggle-recording-hotkey'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
+  
+  // ホットキーイベントのリスナー
+  onHotkeyToggle: (callback) => {
+    const wrappedCallback = () => callback();
+    ipcRenderer.on('toggle-recording-hotkey', wrappedCallback);
+    // コールバックを返して後で削除できるようにする
+    return wrappedCallback;
+  },
+  
+  // リスナーの削除
+  removeHotkeyListener: (callback) => {
+    if (callback) {
+      ipcRenderer.removeListener('toggle-recording-hotkey', callback);
+    }
+  },
+  
+  // 現在のホットキーを取得
+  getCurrentHotkey: () => ipcRenderer.invoke('get-current-hotkey'),
+  
+  // クリップボードに書き込み
+  writeToClipboard: (text) => ipcRenderer.invoke('write-to-clipboard', text),
 });

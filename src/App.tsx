@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton } from '@mui/material';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton, Chip } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -17,9 +17,11 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [platformHotkey, setPlatformHotkey] = useState('');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
 
   const handleToggleRecording = async () => {
     if (isRecording) {
@@ -31,7 +33,7 @@ function App() {
     }
   };
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -75,7 +77,7 @@ function App() {
         setError('マイクへのアクセスが拒否されました。');
       }
     }
-  };
+  }, []);
   
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -84,7 +86,7 @@ function App() {
     }
   };
   
-  const processAudio = async (audioBlob: Blob) => {
+  const processAudio = useCallback(async (audioBlob: Blob) => {
     setIsProcessing(true);
     setError(null);
     
@@ -97,10 +99,21 @@ function App() {
         { language: 'ja', responseFormat: 'verbose_json' }
       );
       
-      if (result.success) {
-        setTranscript(result.data.text);
+      if (result.success && result.data) {
+        const transcribedText = result.data.text;
+        setTranscript(transcribedText);
+        
+        // 自動的にクリップボードにコピー（Electron経由）
+        if (transcribedText) {
+          const clipboardResult = await window.electronAPI.writeToClipboard(transcribedText);
+          if (clipboardResult.success) {
+            setIsCopied(true);
+            setSnackbarOpen(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          }
+        }
       } else {
-        throw new Error(result.error);
+        throw new Error(result.error || '文字起こしに失敗しました');
       }
     } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
@@ -112,7 +125,7 @@ function App() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, []);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(transcript);
@@ -124,6 +137,42 @@ function App() {
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
+
+  // プラットフォームに応じたホットキーを設定
+  useEffect(() => {
+    // Electronから現在のプラットフォームのホットキーを取得
+    window.electronAPI.getCurrentHotkey().then((hotkey: string) => {
+      setPlatformHotkey(hotkey);
+    });
+  }, []);
+
+  // ホットキートグルのハンドラー
+  const handleHotkeyToggle = useCallback(() => {
+    console.log('ホットキー押下を検出');
+    // isRecordingの最新の値を使用するため、直接状態を更新
+    setIsRecording(prev => {
+      if (prev) {
+        // 録音停止
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+        return false;
+      } else {
+        // 録音開始
+        startRecording();
+        return true;
+      }
+    });
+  }, [startRecording]);
+
+  // ホットキーイベントのリスナーを設定
+  useEffect(() => {
+    const removeCallback = window.electronAPI.onHotkeyToggle(handleHotkeyToggle);
+
+    return () => {
+      window.electronAPI.removeHotkeyListener(removeCallback);
+    };
+  }, [handleHotkeyToggle]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -151,6 +200,12 @@ function App() {
               <SettingsIcon />
             </IconButton>
           </Box>
+          
+          <Chip 
+            label={`ホットキー: ${platformHotkey || 'Ctrl+Shift+G'}`} 
+            size="small" 
+            sx={{ mb: 2 }}
+          />
 
           <Box sx={{ my: 4 }}>
             <RecordButton
