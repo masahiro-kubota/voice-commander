@@ -87,8 +87,13 @@ function createFloatingWindow() {
   });
 }
 
+// エラートーストウィンドウを作成
+function createErrorToastWindow(errorMessage) {
+  createToastWindow(errorMessage, true);
+}
+
 // トースト通知ウィンドウを作成
-function createToastWindow(text) {
+function createToastWindow(text, isError = false) {
   // テキストの長さに基づいて高さを計算
   const CHARS_PER_LINE = 40;
   const LINE_HEIGHT = 22;
@@ -199,6 +204,20 @@ function createToastWindow(text) {
             max-height: 200px;
             overflow-y: auto;
           }
+          .error-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #f44336;
+            font-weight: 500;
+          }
+          .error-message {
+            color: white;
+            font-size: 14px;
+            word-break: break-word;
+            line-height: 1.5;
+          }
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -207,6 +226,15 @@ function createToastWindow(text) {
       </head>
       <body>
         <div class="toast">
+          ${isError ? `
+          <div class="error-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span>エラー</span>
+          </div>
+          <div class="error-message">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          ` : `
           <div class="success-header">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
@@ -214,6 +242,7 @@ function createToastWindow(text) {
             <span>コピーしました</span>
           </div>
           <div class="transcript">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          `}
         </div>
         <script>
           setTimeout(() => {
@@ -481,6 +510,11 @@ function setupIPCHandlers() {
   // コンテキストメニューを表示
   ipcMain.on('show-context-menu', () => {
     createApiKeyWindow();
+  });
+  
+  // エラートーストを表示
+  ipcMain.on('show-error-toast', (_, message) => {
+    createErrorToastWindow(message);
   });
 }
 

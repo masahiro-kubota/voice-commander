@@ -62,4 +62,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // コンテキストメニューを表示
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
+  
+  // エラートーストを表示
+  showErrorToast: (message) => ipcRenderer.send('show-error-toast', message),
 });
