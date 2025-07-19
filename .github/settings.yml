@@ -4,15 +4,15 @@
 
 repository:
   # リポジトリ基本設定
-  name: my-repo
-  description: My awesome repository
+  name: voice-commander
+  description: Voice command interface application
   private: false
   default_branch: main
   
   # マージ方法の設定
   allow_squash_merge: true      # スカッシュマージを許可
   allow_merge_commit: false     # マージコミットを禁止（履歴をクリーンに）
-  allow_rebase_merge: true      # リベースマージを許可
+  allow_rebase_merge: false      # リベースマージを許可
   
   # スカッシュマージ時のコミットメッセージ設定
   squash_merge_commit_title: "PR_TITLE"        # PRタイトルを使用
