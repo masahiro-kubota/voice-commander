@@ -1,39 +1,83 @@
-import { AppBar, Box, Container, Paper, Toolbar, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Container, Typography, Snackbar } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
+import RecordButton from './components/RecordButton';
+import TranscriptDisplay from './components/TranscriptDisplay';
+import CopyButton from './components/CopyButton';
 
 function App() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState(
+    'これは音声認識のテストテキストです。実際の音声認識が実装されると、ここに認識結果が表示されます。'
+  );
+  const [isCopied, setIsCopied] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const handleToggleRecording = () => {
+    setIsRecording(!isRecording);
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(transcript);
+    setIsCopied(true);
+    setSnackbarOpen(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static" elevation={2}>
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Voice Commander
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              p: 4, 
-              textAlign: 'center',
-              minHeight: '400px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Typography variant="h5" color="text.secondary">
-              音声認識の準備ができました
-            </Typography>
-          </Paper>
-        </Container>
-      </Box>
+      <Container maxWidth="md">
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <Typography variant="h4" component="h1" gutterBottom>
+            Voice Transcriber
+          </Typography>
+
+          <Box sx={{ my: 4 }}>
+            <RecordButton
+              isRecording={isRecording}
+              onToggleRecording={handleToggleRecording}
+            />
+          </Box>
+
+          {transcript && (
+            <>
+              <TranscriptDisplay transcript={transcript} />
+              
+              <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', justifyContent: 'flex-end' }}>
+                <CopyButton
+                  text={transcript}
+                  isCopied={isCopied}
+                  onCopy={handleCopy}
+                />
+              </Box>
+            </>
+          )}
+        </Box>
+      </Container>
+      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={2000}
+        onClose={handleSnackbarClose}
+        message="コピーしました"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </ThemeProvider>
   );
 }
