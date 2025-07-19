@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const OpenAIService = require('./openai-service.cjs');
 const HotkeyManager = require('./hotkeyManager.cjs');
 
@@ -387,7 +388,6 @@ function createTray() {
   }
   
   // アイコンファイルが存在するか確認
-  const fs = require('fs');
   if (fs.existsSync(iconPath)) {
     const icon = nativeImage.createFromPath(iconPath);
     // トレイ用に小さくリサイズ（16x16 または 22x22）

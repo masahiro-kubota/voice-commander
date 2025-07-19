@@ -58,7 +58,7 @@ function FloatingApp() {
       }
     } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
-      window.electronAPI.showErrorToast('エラーが発生しました');
+      window.electronAPI.showErrorToast('エラーが発生しました: ' + (err instanceof Error ? err.message : String(err)));
     }
   }, [playSuccessSound]);
 
