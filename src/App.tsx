@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Box, Container, Typography, Snackbar, CircularProgress, Alert } from '@mui/material';
+import { Box, Container, Typography, Snackbar, CircularProgress, Alert, IconButton } from '@mui/material';
+import { Settings as SettingsIcon } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import RecordButton from './components/RecordButton';
 import TranscriptDisplay from './components/TranscriptDisplay';
 import CopyButton from './components/CopyButton';
-import { transcribeAudio } from './services/whisperService';
+import SettingsDialog from './components/SettingsDialog';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -15,6 +16,7 @@ function App() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -87,8 +89,19 @@ function App() {
     setError(null);
     
     try {
-      const result = await transcribeAudio(audioBlob, 'ja'); // 日本語に固定
-      setTranscript(result.text);
+      // Electron経由で文字起こし
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const result = await (window as any).electronAPI.transcribeAudio(
+        uint8Array,
+        { language: 'ja', responseFormat: 'verbose_json' }
+      );
+      
+      if (result.success) {
+        setTranscript(result.data.text);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
       if (err instanceof Error) {
@@ -126,9 +139,18 @@ function App() {
             gap: 4,
           }}
         >
-          <Typography variant="h4" component="h1" gutterBottom>
-            Voice Commander
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Voice Commander
+            </Typography>
+            <IconButton 
+              onClick={() => setSettingsOpen(true)}
+              color="primary"
+              sx={{ mb: 1 }}
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Box>
 
           <Box sx={{ my: 4 }}>
             <RecordButton
@@ -172,6 +194,11 @@ function App() {
         onClose={handleSnackbarClose}
         message="コピーしました"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+      
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
       />
     </ThemeProvider>
   );
