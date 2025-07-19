@@ -46,6 +46,9 @@ interface ElectronAPI {
   
   // コンテキストメニューを表示
   showContextMenu: () => void;
+  
+  // エラートーストを表示
+  showErrorToast: (message: string) => void;
 }
 
 interface Window {

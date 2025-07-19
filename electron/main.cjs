@@ -1,5 +1,6 @@
 // フローティングモードかどうかをチェック
-const isFloatingMode = process.env.FLOATING_MODE === 'true';
+// 本番環境（AppImage）では常にフローティングモード
+const isFloatingMode = process.env.FLOATING_MODE === 'true' || process.env.NODE_ENV !== 'development';
 
 // フローティングモードの場合は、floatingMain.cjsを実行
 if (isFloatingMode) {

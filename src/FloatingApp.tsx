@@ -48,9 +48,17 @@ function FloatingApp() {
             playSuccessSound();
           }
         }
+      } else if (result.error) {
+        // エラーメッセージをトーストで表示
+        if (result.error.includes('APIキーが設定されていません')) {
+          window.electronAPI.showErrorToast('APIキーが設定されていません。右クリックで設定してください。');
+        } else {
+          window.electronAPI.showErrorToast('文字起こしに失敗しました: ' + result.error);
+        }
       }
     } catch (err: unknown) {
       console.error('文字起こしエラー:', err);
+      window.electronAPI.showErrorToast('エラーが発生しました: ' + (err instanceof Error ? err.message : String(err)));
     }
   }, [playSuccessSound]);
 
@@ -111,7 +119,7 @@ function FloatingApp() {
   }, [isRecording, startRecording, stopRecording]);
 
   // 右クリックメニューのハンドラー
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+  const handleContextMenu = useCallback((_e: React.MouseEvent) => {
     // メインプロセスに右クリックイベントを通知
     window.electronAPI.showContextMenu();
   }, []);

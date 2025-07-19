@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const OpenAIService = require('./openai-service.cjs');
 const HotkeyManager = require('./hotkeyManager.cjs');
 
@@ -87,8 +88,13 @@ function createFloatingWindow() {
   });
 }
 
+// エラートーストウィンドウを作成
+function createErrorToastWindow(errorMessage) {
+  createToastWindow(errorMessage, true);
+}
+
 // トースト通知ウィンドウを作成
-function createToastWindow(text) {
+function createToastWindow(text, isError = false) {
   // テキストの長さに基づいて高さを計算
   const CHARS_PER_LINE = 40;
   const LINE_HEIGHT = 22;
@@ -199,6 +205,20 @@ function createToastWindow(text) {
             max-height: 200px;
             overflow-y: auto;
           }
+          .error-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #f44336;
+            font-weight: 500;
+          }
+          .error-message {
+            color: white;
+            font-size: 14px;
+            word-break: break-word;
+            line-height: 1.5;
+          }
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -207,6 +227,15 @@ function createToastWindow(text) {
       </head>
       <body>
         <div class="toast">
+          ${isError ? `
+          <div class="error-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span>エラー</span>
+          </div>
+          <div class="error-message">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          ` : `
           <div class="success-header">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
@@ -214,6 +243,7 @@ function createToastWindow(text) {
             <span>コピーしました</span>
           </div>
           <div class="transcript">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          `}
         </div>
         <script>
           setTimeout(() => {
@@ -348,9 +378,26 @@ function createMainWindow() {
 
 // システムトレイを作成
 function createTray() {
-  // トレイアイコンを作成（実際のアイコンファイルが必要）
-  const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHJSURBVDiNpZO9S1VRHMc/5773vvdeX3zJl0zT1FQUESQhCBoaWqKhpSGIoKE/oKGhoaWlpSGipSGipaEhCMKmhiAicsEXUEvT6733nnPObwhtQj1Sz+mczznf7/fLOd/vgf8VWmt2794Nra2tpz3PG1JKlQBkMplomqZ3tNYP4/H4OwDZLmFzczNdXV2DQggxNTUVTU5ORpIkQQgBgFIKz/NobGwUHR0d4sCBA/2u694bGRmxAGIrg87OztPZbPZWPB4vTE9PR/Pz82RrNRobGykvL8d1XZRS+L6P1pq6ujqxZ8+eYMn8UmvdAiBWGXR0dLTm8/kXQRBYCwsLaHYgBPl8nvn5eYQQaK0BqKmpwXEcXV1dLa1du3YjgFxhYBhGr2EYN8fHx6OlLyzLyvvAMAw2bNhAPp/n169fCCEAmJmZoVAo8OzZs+Dz58+DH+5+z2G1kjEAY2Nj0TZF0zRZXFzk48ePxHGMlBKAmpoaqqqqGB4ejr59+3ZutSGAWCGklHrQ19d3ORaLHfZ9/5OU8kyWZRmGYaCUQghBEAT4vo/jOJSUlLC8vCytdevqBQD19fX09PRMbtu2Lfr9+zdxHBPHMVprHMfB933Gx8fjr1+/juzu7m7+q9Bf6g9l7K1xDd3k1AAAAABJRU5ErkJggg==');
-  tray = new Tray(icon);
+  // トレイアイコンを作成
+  let iconPath;
+  if (process.env.NODE_ENV === 'development') {
+    iconPath = path.join(__dirname, '../build/icon.png');
+  } else {
+    // AppImageの場合、アプリケーションのリソースから読み込む
+    iconPath = path.join(process.resourcesPath, 'app/build/icon.png');
+  }
+  
+  // アイコンファイルが存在するか確認
+  if (fs.existsSync(iconPath)) {
+    const icon = nativeImage.createFromPath(iconPath);
+    // トレイ用に小さくリサイズ（16x16 または 22x22）
+    const trayIcon = icon.resize({ width: 22, height: 22 });
+    tray = new Tray(trayIcon);
+  } else {
+    // フォールバック: データURLを使用
+    const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHJSURBVDiNpZO9S1VRHMc/5773vvdeX3zJl0zT1FQUESQhCBoaWqKhpSGIoKE/oKGhoaWlpSGipSGipaEhCMKmhiAicsEXUEvT6733nnPObwhtQj1Sz+mczznf7/fLOd/vgf8VWmt2794Nra2tpz3PG1JKlQBkMplomqZ3tNYP4/H4OwDZLmFzczNdXV2DQggxNTUVTU5ORpIkQQgBgFIKz/NobGwUHR0d4sCBA/2u694bGRmxAGIrg87OztPZbPZWPB4vTE9PR/Pz82RrNRobGykvL8d1XZRS+L6P1pq6ujqxZ8+eYMn8UmvdAiBWGXR0dLTm8/kXQRBYCwsLaHYgBPl8nvn5eYQQaK0BqKmpwXEcXV1dLa1du3YjgFxhYBhGr2EYN8fHx6OlLyzLyvvAMAw2bNhAPp/n169fCCEAmJmZoVAo8OzZs+Dz58+DH+5+z2G1kjEAY2Nj0TZF0zRZXFzk48ePxHGMlBKAmpoaqqqqGB4ejr59+3ZutSGAWCGklHrQ19d3ORaLHfZ9/5OU8kyWZRmGYaCUQghBEAT4vo/jOJSUlLC8vCytdevqBQD19fX09PRMbtu2Lfr9+zdxHBPHMVprHMfB933Gx8fjr1+/juzu7m7+q9Bf6g9l7K1xDd3k1AAAAABJRU5ErkJggg==');
+    tray = new Tray(icon);
+  }
 
   updateTrayMenu();
 
@@ -463,6 +510,11 @@ function setupIPCHandlers() {
   // コンテキストメニューを表示
   ipcMain.on('show-context-menu', () => {
     createApiKeyWindow();
+  });
+  
+  // エラートーストを表示
+  ipcMain.on('show-error-toast', (_, message) => {
+    createErrorToastWindow(message);
   });
 }
 
