@@ -23,6 +23,11 @@ import {
 // APIキー検証用の定数
 const MIN_API_KEY_LENGTH = 20;
 
+// タイマー定数
+const TIMERS = {
+  SUCCESS_MESSAGE_DURATION: 1500
+};
+
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
@@ -97,12 +102,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
         setTimeout(() => {
           onClose();
           setSuccess(false);
-        }, 1500);
+        }, TIMERS.SUCCESS_MESSAGE_DURATION);
       } else {
         setError('APIキーの保存に失敗しました');
       }
-    } catch (err: any) {
-      setError(err.message || 'エラーが発生しました');
+    } catch (err) {
+      setError((err as Error).message || 'エラーが発生しました');
     } finally {
       setLoading(false);
       setIsValidating(false);

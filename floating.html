@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Commander - Floating</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 80px;
+        height: 80px;
+        overflow: hidden;
+        background: transparent;
+        user-select: none;  /* テキスト選択を無効にする */
+      }
+      #root {
+        width: 80px;
+        height: 80px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-app-region: drag;  /* ドラッグ可能にする */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/floating.tsx"></script>
+  </body>
+</html>

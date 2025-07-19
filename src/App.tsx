@@ -9,6 +9,11 @@ import TranscriptDisplay from './components/TranscriptDisplay';
 import CopyButton from './components/CopyButton';
 import SettingsDialog from './components/SettingsDialog';
 
+// 定数
+const TIMERS = {
+  COPY_RESET: 2000
+};
+
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -109,7 +114,7 @@ function App() {
           if (clipboardResult.success) {
             setIsCopied(true);
             setSnackbarOpen(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), TIMERS.COPY_RESET);
           }
         }
       } else {

@@ -22,8 +22,8 @@ interface ElectronAPI {
   }>;
   
   // 既存のメッセージング
-  sendMessage: (channel: string, data: any) => void;
-  onMessage: (channel: string, func: (...args: any[]) => void) => void;
+  sendMessage: (channel: string, data: unknown) => void;
+  onMessage: (channel: string, func: (...args: unknown[]) => void) => void;
   
   // ホットキー関連
   onHotkeyToggle: (callback: () => void) => () => void;
@@ -32,6 +32,17 @@ interface ElectronAPI {
   
   // クリップボード
   writeToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
+  
+  // フローティングウィンドウ用
+  toggleRecording: () => void;
+  updateRecordingState: (isRecording: boolean) => void;
+  onToggleRecording: (callback: () => void) => void;
+  removeToggleListener: () => void;
+  onRecordingStateChange: (callback: (state: boolean) => void) => void;
+  showMainWindow: () => void;
+  
+  // ウィンドウ移動
+  moveWindow: (deltaX: number, deltaY: number) => void;
 }
 
 interface Window {
