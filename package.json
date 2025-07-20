@@ -1,7 +1,7 @@
 {
   "name": "voice-commander",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Voice Commander - A voice transcription app with floating widget",
   "author": "Masahiro Kubota",
   "type": "module",
