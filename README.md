@@ -16,7 +16,32 @@
 
 ## インストール
 
-### AppImageを使用する場合（Linux）
+### 🚀 クイックインストール（Linux）
+
+最新版を自動的にダウンロードしてインストールする場合：
+
+```bash
+# ワンコマンドでインストール
+curl -sSL https://raw.githubusercontent.com/masahiro-kubota/voice-commander/main/install-voice-commander.sh | bash
+```
+
+または、スクリプトをダウンロードして実行：
+
+```bash
+wget https://raw.githubusercontent.com/masahiro-kubota/voice-commander/main/install-voice-commander.sh
+chmod +x install-voice-commander.sh
+./install-voice-commander.sh
+```
+
+このスクリプトは以下を自動的に行います：
+- 最新リリースの検出とダウンロード
+- システムアーキテクチャ（x86_64/arm64）の自動判定
+- AppImageを`~/Applications`に配置
+- デスクトップエントリの作成
+- タスクバーへの追加準備
+- 自動起動の設定（オプション）
+
+### 手動インストール（Linux）
 
 1. [Releases](https://github.com/masahiro-kubota/voice-commander/releases)から最新のAppImageをダウンロード
 2. 実行権限を付与：
@@ -30,24 +55,17 @@
 
 ### タスクバーに常駐させる方法（Linux）
 
-#### 自動インストールスクリプトを使用する方法（推奨）
+#### 既存のAppImageファイルがある場合
 
-付属のインストールスクリプトを使用すると、以下の作業を自動化できます：
+付属のインストールスクリプトを使用：
 
 ```bash
 # AppImageと同じディレクトリでスクリプトを実行
 ./install-taskbar.sh
 
 # または、AppImageのパスを指定して実行
-./install-taskbar.sh ~/Downloads/Voice-Commander-0.0.0-x86_64.AppImage
+./install-taskbar.sh ~/Downloads/Voice-Commander-*.AppImage
 ```
-
-スクリプトは以下を自動的に行います：
-- AppImageを`~/Applications`に移動
-- 実行権限の付与
-- デスクトップエントリの作成
-- アイコンの抽出（可能な場合）
-- 自動起動の設定（オプション）
 
 #### 手動でインストールする方法
 
