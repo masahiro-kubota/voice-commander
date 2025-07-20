@@ -11,6 +11,8 @@ on:
 
 jobs:
   build:
+    group: build-${{ github.ref }}
+    cancel-in-progress: false
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
